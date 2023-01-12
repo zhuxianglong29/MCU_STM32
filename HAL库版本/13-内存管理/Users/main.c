@@ -1,52 +1,148 @@
+/**
+ ****************************************************************************************************
+ * @file        main.c
+ * @author      正点原子团队(ALIENTEK)
+ * @version     V1.0
+ * @date        2020-04-28
+ * @brief       内存管理 实验
+ * @license     Copyright (c) 2020-2032, 广州市星翼电子科技有限公司
+ ****************************************************************************************************
+ * @attention
+ *
+ * 实验平台:正点原子 STM32F103开发板
+ * 在线视频:www.yuanzige.com
+ * 技术论坛:www.openedv.com
+ * 公司网址:www.alientek.com
+ * 购买地址:openedv.taobao.com
+ *
+ ****************************************************************************************************
+ */
+
 #include "./SYSTEM/sys/sys.h"
-#include "./SYSTEM/delay/delay.h"
 #include "./SYSTEM/usart/usart.h"
+#include "./SYSTEM/delay/delay.h"
+#include "./USMART/usmart.h"
 #include "./BSP/LED/led.h"
 #include "./BSP/LCD/lcd.h"
-#include "./USMART/usmart.h"
+#include "./BSP/KEY/key.h"
+#include "./MALLOC/malloc.h"
 
 
-/* LED状态设置函数 */
-void led_set(uint8_t sta)
-{
-    LED1(sta);
-}
 
 
 int main(void)
 {
-	u8 i=0;
-	u16 color=0;
-   
-    
+    uint8_t paddr[20];  /* 存放P Addr:+p地址的ASCII值 */
+    uint16_t memused = 0;
+    uint8_t key;
+    uint8_t i = 0;
+    uint8_t *p = 0;
+    uint8_t *tp = 0;
 
-    HAL_Init();                                 /* 初始化HAL库 */
-    sys_stm32_clock_init(RCC_PLL_MUL9);         /* 设置时钟,72M */
-    delay_init(72);                             /* 初始化延时函数 */
-    usart_init(115200);
-	  usmart_dev.init(72);                /* 初始化USMART */
-    led_init();                                 /* 初始化LED */
-    TFTLCD_Init();			//LCD初始化
-	
-	FRONT_COLOR=BLACK;
-	LCD_ShowString(10,10,tftlcd_data.width,tftlcd_data.height,12,"Hello World!");
-	LCD_ShowString(10,30,tftlcd_data.width,tftlcd_data.height,16,"Hello World!");
-	LCD_ShowString(10,50,tftlcd_data.width,tftlcd_data.height,24,"Hello World!");
-	LCD_ShowFontHZ(10, 80,"普中科技");
-	LCD_ShowString(10,120,tftlcd_data.width,tftlcd_data.height,24,"www.prechin.cn");
-	
-	LCD_Fill(10,150,60,180,BLUE);
-	color=LCD_ReadPoint(20,160);
-	LCD_Fill(100,150,150,180,color);
-	printf("color=%x\r\n",color);
-	
-	//LCD_ShowPicture(20,220,200,112,(u8 *)gImage_picture);
+    HAL_Init();                         /* 初始化HAL库 */
+    sys_stm32_clock_init(RCC_PLL_MUL9); /* 设置时钟, 72Mhz */
+    delay_init(72);                     /* 延时初始化 */
+    usart_init(115200);                 /* 串口初始化为115200 */
+    usmart_dev.init(72);                /* 初始化USMART */
+    led_init();                         /* 初始化LED */
+    lcd_init();                         /* 初始化LCD */
+    key_init();                         /* 初始化按键 */
+    my_mem_init(SRAMIN);                /* 初始化内部SRAM内存池 */
 
-	while(1)
-	{
-		   LED0_TOGGLE();                  /* LED0(RED) 闪烁 */
-       delay_ms(500);
-			
-	}
+    lcd_show_string(30,  50, 200, 16, 16, "STM32", RED);
+    lcd_show_string(30,  70, 200, 16, 16, "MALLOC TEST", RED);
+    lcd_show_string(30,  90, 200, 16, 16, "ATOM@ALIENTEK", RED);
+    lcd_show_string(30, 110, 200, 16, 16, "KEY0:Malloc KEY1:Free", RED);
+    lcd_show_string(30, 130, 200, 16, 16, "KEY_UP:Write ", RED);
+    lcd_show_string(30, 160, 200, 16, 16, "SRAMIN ", BLUE);
+    lcd_show_string(30, 176, 200, 16, 16, "SRAMIN   USED:", BLUE);
+
+    while (1)
+    {
+        key = key_scan(0);      /* 不支持连按 */
+
+        switch (key)
+        {
+            case K_LEFT_PRES:     /* KEY0按下 */
+                p = mymalloc(SRAMIN, 2048);  /* 申请2K字节,并写入内容,显示在lcd屏幕上面 */
+
+                if (p != NULL)
+                {
+                    sprintf((char *)p, "Memory Malloc Test%03d", i);        /* 向p写入一些内容 */
+                    lcd_show_string(30, 260, 209, 16, 16, (char *)p, BLUE);  /* 显示P的内容 */
+                }
+
+                break;
+
+            case K_RIGHT_PRES:         /* KEY1按下 */
+                myfree(SRAMIN, p);  /* 释放内存 */
+                p = 0;              /* 指向空地址 */
+                break;
+
+            case K_UP_PRES:         /* KEY UP按下 */
+            if (p != NULL )
+            {
+              sprintf((char *)p, "Memory Malloc Test%03d", i);        /* 向p写入一些内容 */
+              lcd_show_string(30, 260, 209, 16, 16, (char *)p, BLUE);
+            }
+            break;
+        }
+
+        if (tp != p)
+        {
+            tp = p;
+            sprintf((char *)paddr, "P Addr:0X%08X", (uint32_t)tp);
+            lcd_show_string(30, 240, 209, 16, 16, (char *)paddr, BLUE); /* 显示p的地址 */
+
+            if (p)
+            {
+                lcd_show_string(30, 260, 280, 16, 16, (char *)p, BLUE); /* 显示P的内容 */
+            }
+            else 
+            {
+                lcd_fill(30, 260, 209, 296, WHITE); /* p=0,清除显示 */
+            }
+        }
+
+        delay_ms(10);
+        i++;
+
+        if ((i % 20) == 0)  /* DS0闪烁. */
+        {
+            memused = my_mem_perused(SRAMIN);
+            sprintf((char *)paddr, "%d.%01d%%", memused / 10, memused % 10);
+            lcd_show_string(30 + 112, 176, 200, 16, 16, (char *)paddr, BLUE);   /* 显示内部内存使用率 */
+
+            LED0_TOGGLE();  /* LED0闪烁 */
+        }
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

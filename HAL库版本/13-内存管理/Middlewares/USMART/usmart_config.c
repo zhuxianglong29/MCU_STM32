@@ -25,7 +25,7 @@ struct _m_usmart_nametab usmart_nametab[] =
     (void *)delay_ms, "void delay_ms(uint16_t nms)",
     (void *)delay_us, "void delay_us(uint32_t nus)",
 
-    (void *)led_set, "void led_set(uint8_t sta)",
+    //(void *)led_set, "void led_set(uint8_t sta)",
     //(void *)test_fun, "void test_fun(void(*ledset)(uint8_t), uint8_t sta)",
 };
 
