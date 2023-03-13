@@ -1,0 +1,30 @@
+#ifndef __LED_H_
+#define __LED_H_
+
+/* 引脚 定义 */
+#define LED0_GPIO_PORT GPIOC
+#define LED0_GPIO_PIN GPIO_PIN_0
+/* PC 口时钟使能 */
+#define LED_GPIO_CLK_ENABLE() do{ __HAL_RCC_GPIOC_CLK_ENABLE(); }while(0)
+
+
+#define LED1_GPIO_PORT GPIOC
+#define LED1_GPIO_PIN GPIO_PIN_1
+
+/* LED 端口定义 */
+#define LED0(x) do{ x ? \
+HAL_GPIO_WritePin(LED0_GPIO_PORT, LED0_GPIO_PIN, GPIO_PIN_SET) : \
+HAL_GPIO_WritePin(LED0_GPIO_PORT, LED0_GPIO_PIN, GPIO_PIN_RESET);\
+}while(0) /* LED0 翻转 */
+#define LED1(x) do{ x ? \
+HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_GPIO_PIN, GPIO_PIN_SET) : \
+HAL_GPIO_WritePin(LED1_GPIO_PORT, LED1_GPIO_PIN, GPIO_PIN_RESET);\
+}while(0) /* LED1 翻转 */
+
+/* LED 取反定义 */
+#define LED0_TOGGLE() do{ HAL_GPIO_TogglePin(LED0_GPIO_PORT, LED0_GPIO_PIN);}while(0) /* LED0 = !LED0 */
+#define LED1_TOGGLE() do{ HAL_GPIO_TogglePin(LED1_GPIO_PORT, LED1_GPIO_PIN);}while(0) /* LED1 = !LED1 */
+/* 外部接口函数*/
+void led_init(void); 
+
+#endif 
